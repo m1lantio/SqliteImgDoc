@@ -252,7 +252,7 @@ std::vector<dbIndex> IDbReadCommon::Query(const IDimCoordinateQueryClause* claus
         stringstream ss;   
         ss << "SELECT spatialindex." << this->GetDocInfo().GetTilesSpatialIndexColumnName(IDbDocInfo::TilesSpatialIndexColumn::Pk) << " FROM "
             << this->GetDocInfo().GetTableName(IDbDocInfo::TableType::TilesSpatialIndex) << " spatialindex "
-            << "INNER JOIN " << this->GetDocInfo().GetTableName(IDbDocInfo::TableType::TilesInfo) << " info ON "
+            << "CROSS JOIN " << this->GetDocInfo().GetTableName(IDbDocInfo::TableType::TilesInfo) << " info ON "
             << "spatialindex." << this->GetDocInfo().GetTilesSpatialIndexColumnName(IDbDocInfo::TilesSpatialIndexColumn::Pk) << " = info." << this->GetDocInfo().GetTileInfoColumnName(IDbDocInfo::TilesInfoColumn::Pk)
             << " WHERE (" <<
             this->GetDocInfo().GetTilesSpatialIndexColumnName(IDbDocInfo::TilesSpatialIndexColumn::MaxX) << ">=?1 AND " <<
