@@ -18,6 +18,8 @@ public:
     BenchmarkItem RunTest2();
     BenchmarkItem RunTest3();
     BenchmarkItem RunTest4();
+    BenchmarkItem RunTest5();
+    BenchmarkItem RunTest6();
 private:
     std::shared_ptr<SlImgDoc::IDb> CreateDb(bool withTransaction, bool createIndices, bool withSpatialIndex);
     //std::vector<SlImgDoc::CDimCoordinateQueryClause> GenerateRandomSingeCoordinateQueryClauses(int count);

@@ -130,6 +130,76 @@ BenchmarkItem TestCase2::RunTest4()
     return item;
 }
 
+BenchmarkItem TestCase2::RunTest5()
+{
+    const int NumberOfQueries = 10000;
+    auto db = this->CreateDb(true, false, false);
+    db->GetWriter()->CreateIndexOnCoordinate('M');
+    db->GetWriter()->CreateSpatialIndex();
+
+    auto read = db->GetReader();
+    auto queryRectangles = this->GenerateRandomQueryRects(NumberOfQueries, this->tileWidth * 1.5, this->tileHeight * 1.5);
+
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
+
+    for (auto& queryRect : queryRectangles)
+    {
+        auto result = read->GetTilesIntersectingRect(queryRect);
+    }
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    BenchmarkItem item;
+    stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << "query " << this->columnCount << " x " << this->rowCount << " tiles in regular grid (w/ spatial index)";
+    item.benchmarkName = ss.str();
+    ss = stringstream();
+    ss.imbue(std::locale(""));
+    ss << "Using a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles and a spatial index (created after adding), " <<
+        NumberOfQueries << " random queries for a rect are run.";
+    item.explanation = ss.str();
+    item.executionTime = (stop - start);
+    return item;
+}
+
+BenchmarkItem TestCase2::RunTest6()
+{
+    const int NumberOfQueries = 10000;
+    auto db = this->CreateDb(true, false, false);
+    db->GetWriter()->CreateIndexOnCoordinate('M');
+    db->GetWriter()->CreateSpatialIndex();
+
+    auto read = db->GetReader();
+    auto queryRectangles = this->GenerateRandomQueryRects(NumberOfQueries, this->tileWidth * 3.0, this->tileHeight * 3.0);
+
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
+
+    for (auto& queryRect : queryRectangles)
+    {
+        auto result = read->GetTilesIntersectingRect(queryRect);
+    }
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    BenchmarkItem item;
+    stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << "query " << this->columnCount << " x " << this->rowCount << " tiles in regular grid (w/ spatial index)";
+    item.benchmarkName = ss.str();
+    ss = stringstream();
+    ss.imbue(std::locale(""));
+    ss << "Using a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles and a spatial index (created after adding), " <<
+        NumberOfQueries << " random queries for a rect (3w x 3h) are run.";
+    item.explanation = ss.str();
+    item.executionTime = (stop - start);
+    return item;
+}
+
 std::vector<SlImgDoc::RectangleD> TestCase2::GenerateRandomQueryRects(int count, double width, double height)
 {
     default_random_engine generator;

@@ -64,6 +64,7 @@ public:
         //this->hdr.pixeltype = PixelType::RGB24;
         this->hdr.stride = w;
 
+        // populate with dummy data 0,1,2,3...size-1
         for (int i = 0; i < this->size; ++i)
         {
             this->data[i] = (uint8_t)i;
@@ -100,6 +101,12 @@ static void WriteMosaic(IDbWrite* dbw, int rows, int columns, int sizeX, int siz
     baseInfo.pixelHeight = sizeY;
     baseInfo.pixelType = PixelType::BGR24;
 
+    // create a doc with C=1, Z=1, T=10
+    // for each T, M = 0...rows*columns-1
+    // Total W = columns*sizeX
+    // Total H = rows*sizeY
+    // Total number of tiles = rows*columns*10
+
     dbw->BeginTransaction();
     for (int i = 0; i < 10; ++i)
     {
@@ -124,7 +131,7 @@ static void WriteMosaic(IDbWrite* dbw, int rows, int columns, int sizeX, int siz
 void TestRead()
 {
     OpenOptions opts;
-    opts.dbFilename = "D:\\test.db";
+    opts.dbFilename = "C:\\_SQLITE_DBs\\test.db";
     auto readDb = IDbFactory::OpenExisting(opts);
     auto read = readDb->GetReader();// IDbFactory::OpenExisting(opts);
 
@@ -149,7 +156,7 @@ void TestRead()
 void TestCreateAndWrite()
 {
     CreateOptions opts;
-    opts.dbFilename = "D:\\test.db";
+    opts.dbFilename = "C:\\_SQLITE_DBs\\test.db";
     opts.dimensions.emplace('C');
     opts.dimensions.emplace('Z');
     opts.dimensions.emplace('T');
@@ -163,7 +170,7 @@ void TestCreateAndWrite()
 void TestRead2()
 {
     OpenOptions opts;
-    opts.dbFilename = "D:\\test.db";
+    opts.dbFilename = "C:\\_SQLITE_DBs\\test.db";
     {
         auto readDb = IDbFactory::OpenExisting(opts);
         auto read = readDb->GetReader();
@@ -191,6 +198,12 @@ static void WriteMosaicAndPerTileData(IDbWrite* dbw, int rows, int columns, int 
     baseInfo.pixelWidth = sizeX;
     baseInfo.pixelHeight = sizeY;
     baseInfo.pixelType = PixelType::BGR24;
+
+    // create a doc with C=1, Z=1, T=10
+    // for each T, M = 0...rows*columns-1
+    // Total W = columns*sizeX
+    // Total H = rows*sizeY
+    // Total number of tiles = rows*columns*10
 
     dbw->BeginTransaction();
     for (int i = 0; i < 10; ++i)
@@ -238,7 +251,7 @@ static void WriteMosaicAndPerTileData(IDbWrite* dbw, int rows, int columns, int 
 void TestCoordinateData1()
 {
     CreateOptions opts;
-    opts.dbFilename = "D:\\test2.db";
+    opts.dbFilename = "C:\\_SQLITE_DBs\\test_coord.db";
     opts.dimensions.emplace('C');
     opts.dimensions.emplace('Z');
     opts.dimensions.emplace('T');
@@ -277,14 +290,18 @@ void TestCoordinateData1()
 static void TestRead3()
 {
     OpenOptions opts;
-    opts.dbFilename = "D:\\Dev\\GitHub\\SqliteImgDoc\\out\\build\\x64-Debug\\ConvCZI\\Example2.db";
+    opts.dbFilename = "C:\\_SQLITE_DBs\\test.db";
+    //opts.readOnly = false;
+
     auto readDb = IDbFactory::OpenExisting(opts);
     auto read = readDb->GetReader();
+
     CDimCoordinateQueryClause queryClause;
     queryClause.AddRangeClause('S', IDimCoordinateQueryClause::RangeClause{ 0,0 });
     queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ 0,0 });
     queryClause.AddRangeClause('T', IDimCoordinateQueryClause::RangeClause{ 0,0 });
     // queryClause.AddRangeClause('M', IDimCoordinateQueryClause::RangeClause{ 0,0 });
+
     TileInfoQueryClause tileInfoQuery(ConditionalOperator::Equal, 5);
     auto r = read->Query(&queryClause, &tileInfoQuery);
 

@@ -34,7 +34,7 @@ BenchmarkItem TestCase3::RunTest1()
     item.benchmarkName = ss.str();
     ss = stringstream();
     ss.imbue(std::locale(""));
-    ss << "Create a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles. An index for dimension 'M' is created, and a spatial index." <<
+    ss << "Create a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles. Indices for dimensions 'M','T' are created, and a spatial index." <<
         "The information is added within a single transaction.";
     item.explanation = ss.str();
     item.executionTime = (stop - start);
@@ -58,7 +58,7 @@ BenchmarkItem TestCase3::RunTest2()
     item.benchmarkName = ss.str();
     ss = stringstream();
     ss.imbue(std::locale(""));
-    ss << "Create a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles. No indexes are created. " <<
+    ss << "Create a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles. No indices are created. " <<
         "The information is added within a single transaction.";
     item.explanation = ss.str();
     item.executionTime = (stop - start);
@@ -66,6 +66,34 @@ BenchmarkItem TestCase3::RunTest2()
 }
 
 BenchmarkItem TestCase3::RunTest3()
+{
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
+
+    auto db = this->CreateDb(true, false, false);
+
+    db->GetWriter()->CreateIndexOnCoordinate('M');
+    db->GetWriter()->CreateIndexOnCoordinate('T');
+    db->GetWriter()->CreateSpatialIndex();
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    BenchmarkItem item;
+    stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << "add " << this->columnCount << " x " << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles in regular grid (w/ transaction, indices for 'M', 'T' and spatial index are created after tiles addition)";
+    item.benchmarkName = ss.str();
+    ss = stringstream();
+    ss.imbue(std::locale(""));
+    ss << "Create a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles. All indices are created after tiles addition. " <<
+        "The information is added within a single transaction.";
+    item.explanation = ss.str();
+    item.executionTime = (stop - start);
+    return item;
+}
+
+BenchmarkItem TestCase3::RunTest4()
 {
     const int NumberOfQueries = 10000;
     auto db = this->CreateDb(true, true, true);
@@ -95,19 +123,106 @@ BenchmarkItem TestCase3::RunTest3()
     BenchmarkItem item;
     stringstream ss;
     ss.imbue(std::locale(""));
-    ss << "query " << this->columnCount << " x " << this->rowCount << " tiles in regular grid (w/ spatial index, w/index)";
+    ss << "query " << this->columnCount << " x " << this->rowCount << " tiles in regular grid (w/ spatial index, w/ M index, w/ T index)";
     item.benchmarkName = ss.str();
     ss = stringstream();
     ss.imbue(std::locale(""));
     ss << "Using a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles, " <<
-        this->tCount << " T's and a spatial index, " <<
+        this->tCount << " T's, a spatial index and 'M','T' indices, " <<
         NumberOfQueries << " random queries for a rect and a random T-coordinate are run.";
     item.explanation = ss.str();
     item.executionTime = (stop - start);
     return item;
 }
 
-BenchmarkItem TestCase3::RunTest4()
+BenchmarkItem TestCase3::RunTest5()
+{
+    const int NumberOfQueries = 10000;
+    auto db = this->CreateDb(true, false, false);
+    db->GetWriter()->CreateIndexOnCoordinate('M');
+    db->GetWriter()->CreateIndexOnCoordinate('T');
+    db->GetWriter()->CreateSpatialIndex();
+
+    auto read = db->GetReader();
+
+    auto queryRectangles = this->GenerateRandomQueryRects(NumberOfQueries, this->tileWidth * 1.5, this->tileHeight * 1.5);
+
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
+
+    uniform_int_distribution<int> tDistribution(0, this->tCount - 1);
+    default_random_engine generator;
+
+    for (auto& queryRect : queryRectangles)
+    {
+        CDimCoordinateQueryClause queryClause;
+        const int t = tDistribution(generator);
+        queryClause.AddRangeClause('T', IDimCoordinateQueryClause::RangeClause{ t, t });
+        auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, nullptr);
+    }
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    BenchmarkItem item;
+    stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << "query " << this->columnCount << " x " << this->rowCount << " tiles in regular grid (w/ spatial index, w/ index M, w/ index T)";
+    item.benchmarkName = ss.str();
+    ss = stringstream();
+    ss.imbue(std::locale(""));
+    ss << "Using a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles, " <<
+        this->tCount << " T's, a spatial index and 'M','T' indices added after tiles addition, " <<
+        NumberOfQueries << " random queries for a rect and a random T-coordinate are run.";
+    item.explanation = ss.str();
+    item.executionTime = (stop - start);
+    return item;
+}
+
+BenchmarkItem TestCase3::RunTest6()
+{
+    const int NumberOfQueries = 10000;
+    auto db = this->CreateDb(true, false, false);
+    db->GetWriter()->CreateIndexOnCoordinate('M');
+    db->GetWriter()->CreateSpatialIndex();
+
+    auto read = db->GetReader();
+
+    auto queryRectangles = this->GenerateRandomQueryRects(NumberOfQueries, this->tileWidth * 1.5, this->tileHeight * 1.5);
+
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
+
+    uniform_int_distribution<int> tDistribution(0, this->tCount - 1);
+    default_random_engine generator;
+
+    for (auto& queryRect : queryRectangles)
+    {
+        CDimCoordinateQueryClause queryClause;
+        const int t = tDistribution(generator);
+        queryClause.AddRangeClause('T', IDimCoordinateQueryClause::RangeClause{ t, t });
+        auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, nullptr);
+    }
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    BenchmarkItem item;
+    stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << "query " << this->columnCount << " x " << this->rowCount << " tiles in regular grid (w/ spatial index, w/index M)";
+    item.benchmarkName = ss.str();
+    ss = stringstream();
+    ss.imbue(std::locale(""));
+    ss << "Using a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles, " <<
+        this->tCount << " T's, a spatial index and an 'M' index after tiles addition, " <<
+        NumberOfQueries << " random queries for a rect and a random T-coordinate are run.";
+    item.explanation = ss.str();
+    item.executionTime = (stop - start);
+    return item;
+}
+
+BenchmarkItem TestCase3::RunTest7()
 {
     const int NumberOfQueries = 500;
     auto db = this->CreateDb(true, false, false);
@@ -136,7 +251,7 @@ BenchmarkItem TestCase3::RunTest4()
     BenchmarkItem item;
     stringstream ss;
     ss.imbue(std::locale(""));
-    ss << "query " << this->columnCount << " x " << this->rowCount << " tiles in regular grid, " << this->tCount << " T's (w/o spatial index, w/ index)";
+    ss << "query " << this->columnCount << " x " << this->rowCount << " tiles in regular grid, " << this->tCount << " T's (w/o spatial index, w/o index)";
     item.benchmarkName = ss.str();
     ss = stringstream();
     ss.imbue(std::locale(""));
@@ -181,6 +296,7 @@ std::shared_ptr<SlImgDoc::IDb> TestCase3::CreateDb(bool withTransaction, bool cr
     if (createIndices)
     {
         dbWrite->CreateIndexOnCoordinate('M');
+        dbWrite->CreateIndexOnCoordinate('T');
     }
 
     if (withTransaction)
@@ -205,8 +321,8 @@ std::shared_ptr<SlImgDoc::IDb> TestCase3::CreateDb(bool withTransaction, bool cr
                 tileBaseInfo.pixelHeight = this->tileWidth;;
                 tileBaseInfo.pixelType = PixelType::GRAY8;
 
-                // and now we add a coordinate which has dimension 'M'
-                TileCoordinate tc({ { 'M', r * this->columnCount + c },{'T',t} });
+                // and now we add a coordinate which has dimension 'M' and 'T'
+                TileCoordinate tc({ { 'M', r * this->columnCount + c },{'T', t} });
                 CDataObjCustom dataCustom(4, 1);
 
                 dbWrite->AddTile(&tc, &posInfo, &tileBaseInfo, DataTypes::CUSTOM, &dataCustom);

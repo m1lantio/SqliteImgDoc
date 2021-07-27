@@ -316,6 +316,40 @@ BenchmarkItem TestCase1::RunTest10()
     item.executionTime = stop - start;
     return item;
 }
+
+BenchmarkItem TestCase1::RunTest11()
+{
+    // same as Test10, but spatial index is created after tiles addition.
+
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
+
+    auto db = this->CreateDb(true, false, false);
+
+    db->GetWriter()->CreateIndexOnCoordinate('Z');
+    db->GetWriter()->CreateIndexOnCoordinate('T');
+
+    db->GetWriter()->CreateSpatialIndex();
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    BenchmarkItem item;
+    stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << "add " << this->tCount << "T x " << this->zCount << "Z tiles (w/ transaction, indices created after adding, spatial index created after adding)";
+    item.benchmarkName = ss.str();
+    ss = stringstream();
+    ss.imbue(std::locale(""));
+    ss << "Create a database (in memory) with dimension 'T' and 'Z', add " << this->zCount * this->tCount << " tiles with "
+        "T in the range [0," << this->tCount - 1 << "] and Z in the range [0," << this->zCount - 1 << "]. The tiles are added with "
+        "one transaction for all the adds. After the add-operation, indices for 'T' and 'Z' are created. Spatial index is created after adding the tiles.";
+    item.explanation = ss.str();
+
+    item.executionTime = stop - start;
+    return item;
+}
+
 //----
 
 /*private*/std::vector<SlImgDoc::CDimCoordinateQueryClause> TestCase1::GenerateRandomSingeCoordinateQueryClauses(int count)

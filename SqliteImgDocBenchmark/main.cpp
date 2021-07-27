@@ -74,6 +74,8 @@ static void PrintBenchmarkItem(const BenchmarkItem& item)
     cout << endl;
     PrintBenchmarkItem(testcase1.RunTest10());
     cout << endl;
+    PrintBenchmarkItem(testcase1.RunTest11());
+    cout << endl;
 }
 
 /*static*/void RunTestCase2(const CommandLineOptions& cmdLineOptions)
@@ -91,21 +93,36 @@ static void PrintBenchmarkItem(const BenchmarkItem& item)
 
     PrintBenchmarkItem(testcase2.RunTest4());
     cout << endl;
+
+    PrintBenchmarkItem(testcase2.RunTest5());
+    cout << endl;
+
+    PrintBenchmarkItem(testcase2.RunTest6());
+    cout << endl;
 }
 
 /*static*/ void RunTestCase3(const CommandLineOptions & cmdLineOptions)
 {
     TestCase3 testcase3(cmdLineOptions.GetParamsTestCase3());
 
-  /*  PrintBenchmarkItem(testcase3.RunTest1());
+    PrintBenchmarkItem(testcase3.RunTest1());
     cout << endl;
 
     PrintBenchmarkItem(testcase3.RunTest2());
-    cout << endl;*/
+    cout << endl;
 
     PrintBenchmarkItem(testcase3.RunTest3());
     cout << endl;
 
     PrintBenchmarkItem(testcase3.RunTest4());
+    cout << endl;
+
+    PrintBenchmarkItem(testcase3.RunTest5());
+    cout << endl;
+
+    PrintBenchmarkItem(testcase3.RunTest6());
+    cout << endl;
+
+    PrintBenchmarkItem(testcase3.RunTest7());
     cout << endl;
 }
