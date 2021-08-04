@@ -384,9 +384,42 @@ static void TestRead4()
     // Get ending timepoint
     auto stop = high_resolution_clock::now();
 
-    // 3.3 seconds
+    // 3.25 seconds
     duration<double> runTime = stop - start;
-    cout << "Runtime: " << runTime.count() << "s" << endl;
+    cout << "10.000 RectQueries + 1 random C + only PyrLevel = 0 --- Runtime: " << runTime.count() << "s" << endl;
+
+    // Get starting timepoint
+    start = high_resolution_clock::now();
+
+    for (auto& queryRect : queryRectangles)
+    {
+        CDimCoordinateQueryClause queryClause;
+        const int c = cDistribution(generator);
+        queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ c, c });
+        auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, nullptr);
+    }
+
+    // Get ending timepoint
+    stop = high_resolution_clock::now();
+
+    // 2.25 seconds
+    runTime = stop - start;
+    cout << "10.000 RectQueries + 1 random C + All PyrLevels --- Runtime: " << runTime.count() << "s" << endl;
+
+    // Get starting timepoint
+    start = high_resolution_clock::now();
+
+    for (auto& queryRect : queryRectangles)
+    {
+        auto result = read->GetTilesIntersectingRect(queryRect);
+    }
+
+    // Get ending timepoint
+    stop = high_resolution_clock::now();
+
+    // 1.47 seconds
+    runTime = stop - start;
+    cout << "10.000 RectQueries + All Channels + All PyrLevels --- Runtime: " << runTime.count() << "s" << endl;
 }
 
 int main()
