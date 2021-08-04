@@ -123,6 +123,9 @@ static void PrintBenchmarkItem(const BenchmarkItem& item)
     PrintBenchmarkItem(testcase3.RunTest6());
     cout << endl;
 
+    PrintBenchmarkItem(testcase3.RunTestReal());
+    cout << endl;
+
     PrintBenchmarkItem(testcase3.RunTest7());
     cout << endl;
 }

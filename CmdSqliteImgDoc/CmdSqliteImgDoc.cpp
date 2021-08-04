@@ -3,9 +3,12 @@
 
 #include <iostream>
 #include "../SqliteImgDoc/external/Interface.h"
+#include <random>
+#include <chrono>
 
 using namespace SlImgDoc;
 using namespace std;
+using namespace std::chrono;
 
 class CSimpleCoord : public ITileCoordinate
 {
@@ -322,13 +325,78 @@ static void TestRead3()
     }
 }
 
+static std::vector<SlImgDoc::RectangleD> GenerateRandomQueryRects(int count, double width, double height, double minX, double maxX, double minY, double maxY)
+{
+    default_random_engine generator;
+
+    uniform_real_distribution<double> distPosX(minX, maxX);
+    uniform_real_distribution<double> distPosY(minY, maxY);
+
+    vector<RectangleD> result;
+    result.reserve(count);
+
+    for (int i = 0; i < count; ++i)
+    {
+        result.emplace_back(RectangleD{ distPosX(generator), distPosY(generator), width, height });
+    }
+
+    return result;
+}
+
+static void TestRead4()
+{
+    int tW = 2056;
+    int tH = 2464;
+    int maxC = 13;
+    
+    OpenOptions opts;
+    opts.dbFilename = "C:\\_SQLITE_DBs\\Tauri_13N2.db";
+    //opts.readOnly = false;
+
+    auto readDb = IDbFactory::OpenExisting(opts);
+    auto read = readDb->GetReader();
+
+    TileInfoQueryClause tileInfoQuery(ConditionalOperator::Equal, 0);
+
+    /*
+    SELECT min(TilePosX), max(TilePosX), min(TIlePosY), max(TilePosY)
+    FROM TILESINFO
+    WHERE PyramidLevel = 0;
+
+    results = -133427.0, -29535.0, 44352.0, 108932.0
+    */
+    auto queryRectangles = GenerateRandomQueryRects(10000, tW * 1.5, tH * 1.5, -133427.0, -29535.0, 44352.0, 108932.0);
+
+    uniform_int_distribution<int> cDistribution(0, maxC);
+    default_random_engine generator;
+
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
+    
+    for (auto& queryRect : queryRectangles)
+    {
+        CDimCoordinateQueryClause queryClause;
+        const int c = cDistribution(generator);
+        queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ c, c });
+        auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, &tileInfoQuery);
+    }
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    // 3.3 seconds
+    duration<double> runTime = stop - start;
+    cout << "Runtime: " << runTime.count() << "s" << endl;
+}
+
 int main()
 {
-    // TestRead();
+    //TestRead();
     //TestRead2();
     //TestCreateAndWrite();
     //TestCoordinateData1();
-    TestRead3();
+    //TestRead3();
+    TestRead4();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

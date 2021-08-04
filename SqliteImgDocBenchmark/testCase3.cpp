@@ -222,6 +222,55 @@ BenchmarkItem TestCase3::RunTest6()
     return item;
 }
 
+BenchmarkItem TestCase3::RunTestReal()
+{
+    const int NumberOfQueries = 10000;
+
+    double tW = 2056.0;
+    double tH = 2464.0;
+    int cols = 57;
+    int rows = 30;
+
+    auto db = this->CreateDb(true, false, true);
+
+    auto read = db->GetReader();
+
+    auto queryRectangles = this->GenerateRandomQueryRects(NumberOfQueries, tW * 1.5, tH * 1.5, 0.0, tW * cols, 0.0, tH * rows);
+
+    TileInfoQueryClause tileInfoQuery(ConditionalOperator::Equal, 0);
+    
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
+
+    uniform_int_distribution<int> tDistribution(0, this->tCount - 1);
+    default_random_engine generator;
+
+    for (auto& queryRect : queryRectangles)
+    {
+        CDimCoordinateQueryClause queryClause;
+        const int t = tDistribution(generator);
+        queryClause.AddRangeClause('T', IDimCoordinateQueryClause::RangeClause{ t, t });
+        auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, &tileInfoQuery);
+    }
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    BenchmarkItem item;
+    stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << "query " << cols << " x " << rows << " tiles in regular grid (w/ spatial index)";
+    item.benchmarkName = ss.str();
+    ss = stringstream();
+    ss.imbue(std::locale(""));
+    ss << "Using a database (in memory) with " << cols << "x" << rows << " = " << cols * rows << " tiles, " <<
+        this->tCount << " T's, a spatial index, " <<
+        NumberOfQueries << " random queries for a rect and a random T-coordinate are run.";
+    item.explanation = ss.str();
+    item.executionTime = (stop - start);
+    return item;
+}
+
 BenchmarkItem TestCase3::RunTest7()
 {
     const int NumberOfQueries = 500;
@@ -277,6 +326,24 @@ std::vector<SlImgDoc::RectangleD> TestCase3::GenerateRandomQueryRects(int count,
     for (int i = 0; i < count; ++i)
     {
         result.emplace_back(RectangleD{ distPosX(generator),distPosY(generator),width,height });
+    }
+
+    return result;
+}
+
+std::vector<SlImgDoc::RectangleD> TestCase3::GenerateRandomQueryRects(int count, double width, double height, double minX, double maxX, double minY, double maxY)
+{
+    default_random_engine generator;
+
+    uniform_real_distribution<double> distPosX(minX, maxX);
+    uniform_real_distribution<double> distPosY(minY, maxY);
+
+    vector<RectangleD> result;
+    result.reserve(count);
+
+    for (int i = 0; i < count; ++i)
+    {
+        result.emplace_back(RectangleD{ distPosX(generator), distPosY(generator), width, height });
     }
 
     return result;
