@@ -5,6 +5,8 @@
 #include "../SqliteImgDoc/external/Interface.h"
 #include <random>
 #include <chrono>
+#include "inc_libczi.h"
+#include "pugixml.hpp"
 
 using namespace SlImgDoc;
 using namespace std;
@@ -343,7 +345,62 @@ static std::vector<SlImgDoc::RectangleD> GenerateRandomQueryRects(int count, dou
     return result;
 }
 
-static void TestRead4()
+static bool WriteRectanglesToXML(const std::vector<SlImgDoc::RectangleD>& rectangles, string path)
+{
+    pugi::xml_document doc;
+
+    // Generate XML declaration
+    auto declarationNode = doc.append_child(pugi::node_declaration);
+    declarationNode.append_attribute(L"version") = L"1.0";
+    declarationNode.append_attribute(L"encoding") = L"ISO-8859-1";
+    declarationNode.append_attribute(L"standalone") = L"yes";
+    
+    // A valid XML doc must contain a single root node of any name
+    auto root = doc.append_child(L"rectangles");
+    root.append_attribute(L"count") = rectangles.size();
+
+    for (const SlImgDoc::RectangleD& rect : rectangles)
+    {
+        auto nodeChild = root.append_child(L"rect");
+        nodeChild.append_attribute(L"x") = rect.x;
+        nodeChild.append_attribute(L"y") = rect.y;
+        nodeChild.append_attribute(L"w") = rect.w;
+        nodeChild.append_attribute(L"h") = rect.h;
+    }
+
+    // Save XML tree to file.
+    // Remark: second optional param is indent string to be used;
+    // default indentation is tab character.
+    return doc.save_file(path.c_str());
+}
+
+static bool WriteResultsToXML(const std::vector<SlImgDoc::dbIndex>& results, string path)
+{
+    pugi::xml_document doc;
+
+    // Generate XML declaration
+    auto declarationNode = doc.append_child(pugi::node_declaration);
+    declarationNode.append_attribute(L"version") = L"1.0";
+    declarationNode.append_attribute(L"encoding") = L"ISO-8859-1";
+    declarationNode.append_attribute(L"standalone") = L"yes";
+
+    // A valid XML doc must contain a single root node of any name
+    auto root = doc.append_child(L"results");
+    root.append_attribute(L"count") = results.size();
+
+    for (const SlImgDoc::dbIndex& ind : results)
+    {
+        auto child = root.append_child(L"index");
+        child.append_attribute(L"i") = ind;
+    }
+
+    // Save XML tree to file.
+    // Remark: second optional param is indent string to be used;
+    // default indentation is tab character.
+    return doc.save_file(path.c_str());
+}
+
+static void TestRead4(double rectScale)
 {
     int tW = 2056;
     int tH = 2464;
@@ -356,6 +413,10 @@ static void TestRead4()
     auto readDb = IDbFactory::OpenExisting(opts);
     auto read = readDb->GetReader();
 
+    // It already has indices for 'M' and 'C'
+    //readDb->GetWriter()->CreateIndexOnCoordinate('M');
+    //readDb->GetWriter()->CreateIndexOnCoordinate('C');
+    
     TileInfoQueryClause tileInfoQuery(ConditionalOperator::Equal, 0);
 
     /*
@@ -365,11 +426,15 @@ static void TestRead4()
 
     results = -133427.0, -29535.0, 44352.0, 108932.0
     */
-    auto queryRectangles = GenerateRandomQueryRects(10000, tW * 1.5, tH * 1.5, -133427.0, -29535.0, 44352.0, 108932.0);
+    auto queryRectangles = GenerateRandomQueryRects(10000, tW * rectScale, tH * rectScale, -133427.0, -29535.0, 44352.0, 108932.0);
+
+    bool ret = WriteRectanglesToXML(queryRectangles, "C:\\_SQLITE_DBs\\rectangles.xml");
 
     uniform_int_distribution<int> cDistribution(0, maxC);
     default_random_engine generator;
 
+    std::vector<dbIndex> results;
+    
     // Get starting timepoint
     auto start = high_resolution_clock::now();
     
@@ -379,10 +444,15 @@ static void TestRead4()
         const int c = cDistribution(generator);
         queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ c, c });
         auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, &tileInfoQuery);
+        results.insert(results.end(), result.begin(), result.end());
     }
 
     // Get ending timepoint
     auto stop = high_resolution_clock::now();
+
+    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\results1.xml");
+    cout << results.size() << endl;
+    results.clear();
 
     // 3.25 seconds
     duration<double> runTime = stop - start;
@@ -397,10 +467,15 @@ static void TestRead4()
         const int c = cDistribution(generator);
         queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ c, c });
         auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, nullptr);
+        results.insert(results.end(), result.begin(), result.end());
     }
 
     // Get ending timepoint
     stop = high_resolution_clock::now();
+
+    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\results2.xml");
+    cout << results.size() << endl;
+    results.clear();
 
     // 2.25 seconds
     runTime = stop - start;
@@ -412,10 +487,15 @@ static void TestRead4()
     for (auto& queryRect : queryRectangles)
     {
         auto result = read->GetTilesIntersectingRect(queryRect);
+        results.insert(results.end(), result.begin(), result.end());
     }
 
     // Get ending timepoint
     stop = high_resolution_clock::now();
+
+    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\results3.xml");
+    cout << results.size() << endl;
+    results.clear();
 
     // 1.47 seconds
     runTime = stop - start;
@@ -429,7 +509,8 @@ int main()
     //TestCreateAndWrite();
     //TestCoordinateData1();
     //TestRead3();
-    TestRead4();
+    TestRead4(1.5);
+    //TestRead4(3.0);
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

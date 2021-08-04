@@ -4,10 +4,10 @@
 #cmake_minimum_required (VERSION 3.8)
 
 # Add source to this project's executable.
-add_executable(CmdSqliteImgDoc CmdSqliteImgDoc.cpp )
+add_executable(CmdSqliteImgDoc CmdSqliteImgDoc.cpp inc_libczi.h)
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(CmdSqliteImgDoc   SqliteImgDoc sqlite3 SQLiteCpp)
+target_link_libraries(CmdSqliteImgDoc SqliteImgDoc sqlite3 SQLiteCpp libCZIStatic)
 
 ##target_link_libraries(SqliteImgDocTests PRIVATE SQLiteCpp)
 if(UNIX AND NOT APPLE)
