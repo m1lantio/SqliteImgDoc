@@ -331,8 +331,8 @@ static std::vector<SlImgDoc::RectangleD> GenerateRandomQueryRects(int count, dou
 {
     default_random_engine generator;
 
-    uniform_real_distribution<double> distPosX(minX, maxX);
-    uniform_real_distribution<double> distPosY(minY, maxY);
+    uniform_real_distribution<double> distPosX(minX, maxX - width);
+    uniform_real_distribution<double> distPosY(minY, maxY - height);
 
     vector<RectangleD> result;
     result.reserve(count);
@@ -404,33 +404,32 @@ static void TestRead4(double rectScale)
 {
     int tW = 2056;
     int tH = 2464;
-    int maxC = 13;
-    
+    int numC = 14;
+
+    double minX = 0.0;
+    double maxX = 103892.0;
+    double minY = 0.0;
+    double maxY = 64580.0;
+
     OpenOptions opts;
     opts.dbFilename = "C:\\_SQLITE_DBs\\Tauri_13N2.db";
-    //opts.readOnly = false;
 
     auto readDb = IDbFactory::OpenExisting(opts);
     auto read = readDb->GetReader();
 
-    // It already has indices for 'M' and 'C'
-    //readDb->GetWriter()->CreateIndexOnCoordinate('M');
-    //readDb->GetWriter()->CreateIndexOnCoordinate('C');
-    
+    // pyramid level 0
     TileInfoQueryClause tileInfoQuery(ConditionalOperator::Equal, 0);
 
     /*
     SELECT min(TilePosX), max(TilePosX), min(TIlePosY), max(TilePosY)
     FROM TILESINFO
     WHERE PyramidLevel = 0;
-
-    results = -133427.0, -29535.0, 44352.0, 108932.0
     */
-    auto queryRectangles = GenerateRandomQueryRects(10000, tW * rectScale, tH * rectScale, -133427.0, -29535.0, 44352.0, 108932.0);
+    auto queryRectangles = GenerateRandomQueryRects(10000, tW * rectScale, tH * rectScale, minX, maxX, minY, maxY);
 
     bool ret = WriteRectanglesToXML(queryRectangles, "C:\\_SQLITE_DBs\\rectangles.xml");
 
-    uniform_int_distribution<int> cDistribution(0, maxC);
+    uniform_int_distribution<int> cDistribution(0, numC - 1);
     default_random_engine generator;
 
     std::vector<dbIndex> results;
@@ -450,11 +449,10 @@ static void TestRead4(double rectScale)
     // Get ending timepoint
     auto stop = high_resolution_clock::now();
 
-    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\results1.xml");
+    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\resultsCP0.xml");
     cout << results.size() << endl;
     results.clear();
 
-    // 3.25 seconds
     duration<double> runTime = stop - start;
     cout << "10.000 RectQueries + 1 random C + only PyrLevel = 0 --- Runtime: " << runTime.count() << "s" << endl;
 
@@ -473,11 +471,10 @@ static void TestRead4(double rectScale)
     // Get ending timepoint
     stop = high_resolution_clock::now();
 
-    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\results2.xml");
+    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\resultsC.xml");
     cout << results.size() << endl;
     results.clear();
 
-    // 2.25 seconds
     runTime = stop - start;
     cout << "10.000 RectQueries + 1 random C + All PyrLevels --- Runtime: " << runTime.count() << "s" << endl;
 
@@ -493,11 +490,10 @@ static void TestRead4(double rectScale)
     // Get ending timepoint
     stop = high_resolution_clock::now();
 
-    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\results3.xml");
+    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\results.xml");
     cout << results.size() << endl;
     results.clear();
 
-    // 1.47 seconds
     runTime = stop - start;
     cout << "10.000 RectQueries + All Channels + All PyrLevels --- Runtime: " << runTime.count() << "s" << endl;
 }
@@ -509,8 +505,8 @@ int main()
     //TestCreateAndWrite();
     //TestCoordinateData1();
     //TestRead3();
-    TestRead4(1.5);
-    //TestRead4(3.0);
+    //TestRead4(1.5);
+    TestRead4(3.0);
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
