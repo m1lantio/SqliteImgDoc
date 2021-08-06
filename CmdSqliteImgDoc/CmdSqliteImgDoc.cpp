@@ -327,19 +327,19 @@ static void TestRead3()
     }
 }
 
-static std::vector<SlImgDoc::RectangleD> GenerateRandomQueryRects(int count, double width, double height, double minX, double maxX, double minY, double maxY)
+static std::vector<SlImgDoc::RectangleD> GenerateRandomQueryRects(int count, int width, int height, int minX, int maxX, int minY, int maxY)
 {
     default_random_engine generator;
 
-    uniform_real_distribution<double> distPosX(minX, maxX - width);
-    uniform_real_distribution<double> distPosY(minY, maxY - height);
+    uniform_int_distribution<int> distPosX(minX, maxX - width);
+    uniform_int_distribution<int> distPosY(minY, maxY - height);
 
     vector<RectangleD> result;
     result.reserve(count);
 
     for (int i = 0; i < count; ++i)
     {
-        result.emplace_back(RectangleD{ distPosX(generator), distPosY(generator), width, height });
+        result.emplace_back(RectangleD{ (double)distPosX(generator), (double)distPosY(generator), (double)width, (double)height });
     }
 
     return result;
@@ -374,7 +374,7 @@ static bool WriteRectanglesToXML(const std::vector<SlImgDoc::RectangleD>& rectan
     return doc.save_file(path.c_str());
 }
 
-static bool WriteResultsToXML(const std::vector<SlImgDoc::dbIndex>& results, string path)
+static bool WriteResultsToXML(const std::shared_ptr<SlImgDoc::IDbRead>& reader, const std::vector<SlImgDoc::dbIndex>& results, string path, bool writeM = false)
 {
     pugi::xml_document doc;
 
@@ -390,8 +390,23 @@ static bool WriteResultsToXML(const std::vector<SlImgDoc::dbIndex>& results, str
 
     for (const SlImgDoc::dbIndex& ind : results)
     {
+        bool getM = false;
+        int mIndex = -1;
+
+        if (writeM)
+        {
+            TileCoordinate tc;
+            reader->ReadTileInfo(ind, &tc, nullptr);
+            getM = tc.TryGetCoordinate('M', &mIndex);
+        }
+
         auto child = root.append_child(L"index");
         child.append_attribute(L"i") = ind;
+
+        if (getM && writeM)
+        {
+            child.append_attribute(L"m") = mIndex;
+        }
     }
 
     // Save XML tree to file.
@@ -406,10 +421,10 @@ static void TestRead4(double rectScale)
     int tH = 2464;
     int numC = 14;
 
-    double minX = 0.0;
-    double maxX = 103892.0;
-    double minY = 0.0;
-    double maxY = 64580.0;
+    int minX = 0;
+    int maxX = 103892;
+    int minY = 0;
+    int maxY = 64580;
 
     OpenOptions opts;
     opts.dbFilename = "C:\\_SQLITE_DBs\\Tauri_13N2.db";
@@ -425,7 +440,7 @@ static void TestRead4(double rectScale)
     FROM TILESINFO
     WHERE PyramidLevel = 0;
     */
-    auto queryRectangles = GenerateRandomQueryRects(10000, tW * rectScale, tH * rectScale, minX, maxX, minY, maxY);
+    auto queryRectangles = GenerateRandomQueryRects(10000, (int)(tW * rectScale), (int)(tH * rectScale), minX, maxX, minY, maxY);
 
     bool ret = WriteRectanglesToXML(queryRectangles, "C:\\_SQLITE_DBs\\rectangles.xml");
 
@@ -449,7 +464,7 @@ static void TestRead4(double rectScale)
     // Get ending timepoint
     auto stop = high_resolution_clock::now();
 
-    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\resultsCP0.xml");
+    WriteResultsToXML(read, results, "C:\\_SQLITE_DBs\\resultsCP0.xml");
     cout << results.size() << endl;
     results.clear();
 
@@ -471,7 +486,7 @@ static void TestRead4(double rectScale)
     // Get ending timepoint
     stop = high_resolution_clock::now();
 
-    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\resultsC.xml");
+    WriteResultsToXML(read, results, "C:\\_SQLITE_DBs\\resultsC.xml");
     cout << results.size() << endl;
     results.clear();
 
@@ -490,7 +505,7 @@ static void TestRead4(double rectScale)
     // Get ending timepoint
     stop = high_resolution_clock::now();
 
-    WriteResultsToXML(results, "C:\\_SQLITE_DBs\\results.xml");
+    WriteResultsToXML(read, results, "C:\\_SQLITE_DBs\\results.xml");
     cout << results.size() << endl;
     results.clear();
 
