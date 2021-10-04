@@ -27,6 +27,18 @@ public:
     int tCount;
 };
 
+class ParametersTestCase4
+{
+public:
+    int rowCount;
+    int columnCount;
+    int tileWidth;
+    int tileHeight;
+    int tCount;
+    int zCount;
+    int cCount;
+};
+
 class CommandLineOptions
 {
 private:
@@ -34,6 +46,7 @@ private:
     ParametersTestCase1 paramsTestCase1;
     ParametersTestCase2 paramsTestCase2;
     ParametersTestCase3 paramsTestCase3;
+    ParametersTestCase4 paramsTestCase4;
 public:
     CommandLineOptions();
 
@@ -42,6 +55,7 @@ public:
     const ParametersTestCase1& GetParamsTestCase1() const;
     const ParametersTestCase2& GetParamsTestCase2() const;
     const ParametersTestCase3& GetParamsTestCase3() const;
+    const ParametersTestCase4& GetParamsTestCase4() const;
 private:
     void SetDefaults();
 };

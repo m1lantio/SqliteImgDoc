@@ -2,6 +2,7 @@
 #include "testCase1.h"
 #include "testCase2.h"
 #include "testCase3.h"
+#include "testCase4.h"
 #include "utils.h"
 #include <iostream>
 #if _WINDOWSENV
@@ -17,6 +18,7 @@ using namespace std::chrono;
 static void RunTestCase1(const CommandLineOptions& cmdLineOptions);
 static void RunTestCase2(const CommandLineOptions& cmdLineOptions);
 static void RunTestCase3(const CommandLineOptions& cmdLineOptions);
+static void RunTestCase4(const CommandLineOptions& cmdLineOptions);
 
 int main(int argc, char** argv)
 {
@@ -31,6 +33,7 @@ int main(int argc, char** argv)
     RunTestCase1(cmdlineopts);
     RunTestCase2(cmdlineopts);
     RunTestCase3(cmdlineopts);
+    RunTestCase4(cmdlineopts);
 
     cout << u8"äöüß" << endl;
 }
@@ -127,5 +130,13 @@ static void PrintBenchmarkItem(const BenchmarkItem& item)
     cout << endl;
 
     PrintBenchmarkItem(testcase3.RunTest7());
+    cout << endl;
+}
+
+/*static*/ void RunTestCase4(const CommandLineOptions& cmdLineOptions)
+{
+    TestCase4 testcase4(cmdLineOptions.GetParamsTestCase4());
+
+    PrintBenchmarkItem(testcase4.RunTest1());
     cout << endl;
 }

@@ -520,8 +520,8 @@ int main()
     //TestCreateAndWrite();
     //TestCoordinateData1();
     //TestRead3();
-    //TestRead4(1.5);
-    TestRead4(3.0);
+    TestRead4(1.5);
+    //TestRead4(3.0);
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
