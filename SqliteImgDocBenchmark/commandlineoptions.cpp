@@ -24,12 +24,12 @@ void CommandLineOptions::SetDefaults()
     this->paramsTestCase3.tileHeight = 1024;
     this->paramsTestCase3.tCount = 20;
 
-    this->paramsTestCase4.rowCount = 100;
-    this->paramsTestCase4.columnCount = 100;
+    this->paramsTestCase4.rowCount = 10;
+    this->paramsTestCase4.columnCount = 10;
     this->paramsTestCase4.tileWidth = 1024;
     this->paramsTestCase4.tileHeight = 1024;
-    this->paramsTestCase4.tCount = 20;
-    this->paramsTestCase4.zCount = 20;
+    this->paramsTestCase4.tCount = 100;
+    this->paramsTestCase4.zCount = 30;
     this->paramsTestCase4.cCount = 20;
 }
 
