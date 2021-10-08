@@ -82,13 +82,19 @@ BenchmarkItem TestCase4::RunTest1()
     // check if every dimension is Uniform
     for (const auto& d : tileDims)
     {
+        // except dimension M
+        if (d == 'M')
+        {
+            continue;
+        }
+
         string dimName;
         if (docInfo->GetTileInfoColumnNameForDimension(d, dimName))
         {
             query.reset();
             query.clearBindings();
 
-            // i.e. Dim_M
+            // i.e. Dim_C
             query.bind(1, dimName);
 
             try
@@ -119,13 +125,13 @@ BenchmarkItem TestCase4::RunTest1()
     BenchmarkItem item;
     stringstream ss;
     ss.imbue(std::locale(""));
-    ss << "Perform 'IsUniform' on a database with " << this->columnCount << " x " << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles in regular grid (with indices for 'M', 'T', 'Z' and 'C') " <<
+    ss << "Perform 'IsUniform' on a database with " << this->columnCount << " x " << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles in regular grid (with indices for 'T', 'Z' and 'C') " <<
         "and C = " << this->cCount << ", Z = " << this->zCount << ", T = " << this->tCount;
     item.benchmarkName = ss.str();
     
     ss = stringstream();
     ss.imbue(std::locale(""));
-    ss << "On a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles and indices for ('M','T','Z','C') " <<
+    ss << "On a database (in memory) with " << this->columnCount << "x" << this->rowCount << " = " << this->columnCount * this->rowCount << " tiles and indices for ('T','Z','C') " <<
         "and C = " << this->cCount << ", Z = " << this->zCount << ", T = " << this->tCount << ", perform 'IsUniform' and return " << isUniform;
     item.explanation = ss.str();
     item.executionTime = (stop - start);

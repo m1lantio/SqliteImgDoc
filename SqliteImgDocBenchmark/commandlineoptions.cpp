@@ -29,7 +29,7 @@ void CommandLineOptions::SetDefaults()
     this->paramsTestCase4.tileWidth = 1024;
     this->paramsTestCase4.tileHeight = 1024;
     this->paramsTestCase4.tCount = 100;
-    this->paramsTestCase4.zCount = 30;
+    this->paramsTestCase4.zCount = 50;
     this->paramsTestCase4.cCount = 20;
 }
 
