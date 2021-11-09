@@ -415,7 +415,7 @@ static bool WriteResultsToXML(const std::shared_ptr<SlImgDoc::IDbRead>& reader, 
     return doc.save_file(path.c_str());
 }
 
-static void TestRead4(double rectScale)
+static void TestRead4(double rectScale, bool queryC, bool queryPyramid0andC)
 {
     int tW = 2056;
     int tH = 2464;
@@ -425,6 +425,10 @@ static void TestRead4(double rectScale)
     int maxX = 103892;
     int minY = 0;
     int maxY = 64580;
+
+    high_resolution_clock::time_point start;
+    high_resolution_clock::time_point stop;
+    duration<double> runTime;
 
     OpenOptions opts;
     opts.dbFilename = "C:\\_SQLITE_DBs\\Tauri_13N2.db";
@@ -448,50 +452,56 @@ static void TestRead4(double rectScale)
     default_random_engine generator;
 
     std::vector<dbIndex> results;
-    
-    // Get starting timepoint
-    auto start = high_resolution_clock::now();
-    
-    for (auto& queryRect : queryRectangles)
+
+    if (queryPyramid0andC)
     {
-        CDimCoordinateQueryClause queryClause;
-        const int c = cDistribution(generator);
-        queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ c, c });
-        auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, &tileInfoQuery);
-        results.insert(results.end(), result.begin(), result.end());
+        // Get starting timepoint
+        start = high_resolution_clock::now();
+
+        for (auto& queryRect : queryRectangles)
+        {
+            CDimCoordinateQueryClause queryClause;
+            const int c = cDistribution(generator);
+            queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ c, c });
+            auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, &tileInfoQuery);
+            results.insert(results.end(), result.begin(), result.end());
+        }
+
+        // Get ending timepoint
+        stop = high_resolution_clock::now();
+
+        WriteResultsToXML(read, results, "C:\\_SQLITE_DBs\\resultsCP0.xml");
+        cout << results.size() << endl;
+        results.clear();
+
+        runTime = stop - start;
+        cout << "10.000 RectQueries + 1 random C + only PyrLevel = 0 --- Runtime: " << runTime.count() << "s" << endl;
     }
 
-    // Get ending timepoint
-    auto stop = high_resolution_clock::now();
-
-    WriteResultsToXML(read, results, "C:\\_SQLITE_DBs\\resultsCP0.xml");
-    cout << results.size() << endl;
-    results.clear();
-
-    duration<double> runTime = stop - start;
-    cout << "10.000 RectQueries + 1 random C + only PyrLevel = 0 --- Runtime: " << runTime.count() << "s" << endl;
-
-    // Get starting timepoint
-    start = high_resolution_clock::now();
-
-    for (auto& queryRect : queryRectangles)
+    if (queryC)
     {
-        CDimCoordinateQueryClause queryClause;
-        const int c = cDistribution(generator);
-        queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ c, c });
-        auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, nullptr);
-        results.insert(results.end(), result.begin(), result.end());
+        // Get starting timepoint
+        start = high_resolution_clock::now();
+
+        for (auto& queryRect : queryRectangles)
+        {
+            CDimCoordinateQueryClause queryClause;
+            const int c = cDistribution(generator);
+            queryClause.AddRangeClause('C', IDimCoordinateQueryClause::RangeClause{ c, c });
+            auto result = read->GetTilesIntersectingRect(queryRect, &queryClause, nullptr);
+            results.insert(results.end(), result.begin(), result.end());
+        }
+
+        // Get ending timepoint
+        stop = high_resolution_clock::now();
+
+        WriteResultsToXML(read, results, "C:\\_SQLITE_DBs\\resultsC.xml");
+        cout << results.size() << endl;
+        results.clear();
+
+        runTime = stop - start;
+        cout << "10.000 RectQueries + 1 random C + All PyrLevels --- Runtime: " << runTime.count() << "s" << endl;
     }
-
-    // Get ending timepoint
-    stop = high_resolution_clock::now();
-
-    WriteResultsToXML(read, results, "C:\\_SQLITE_DBs\\resultsC.xml");
-    cout << results.size() << endl;
-    results.clear();
-
-    runTime = stop - start;
-    cout << "10.000 RectQueries + 1 random C + All PyrLevels --- Runtime: " << runTime.count() << "s" << endl;
 
     // Get starting timepoint
     start = high_resolution_clock::now();
@@ -520,7 +530,7 @@ int main()
     //TestCreateAndWrite();
     //TestCoordinateData1();
     //TestRead3();
-    TestRead4(1.5);
+    TestRead4(1.5, false, false);
     //TestRead4(3.0);
 }
 
